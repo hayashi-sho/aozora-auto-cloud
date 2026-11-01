@@ -1,3 +1,6 @@
+## v1.6.1 更新
+車検証の写真選択とカメラ撮影を別ボタンに分離。iPhone Safariで選択できるか要実機確認。
+
 # AOZORA. Auto Cloud v1.5
 
 GitHub Pages対応のiPhone向けローカル保存型試作アプリ。AI機能はありません。
