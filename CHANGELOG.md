@@ -1,5 +1,1 @@
-# v2.2.1 CATALOG FIX
-- Fixed missing scanEsc helper that prevented the all-brand catalogue from opening.
-- Added visible entry button on parts screen, even if the catalogue menu is hidden.
-- Updated PWA cache version.
-- Preserved other v2.2 files.
+v2.2.2: 登録済み部品展開図の自動絞り込みと画像プレビュー、外部カタログへのリンクを追加。既存機能を保持。

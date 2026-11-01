@@ -1,2 +1,1 @@
-# AOZORA. Auto Cloud v2.2.1
-Upload all files to the GitHub Pages repository root. This release fixes the foreign-parts catalogue opening issue. It is a user-maintained parts register, not an automatic OEM catalogue. Back up local data before updating.
+AOZORA Auto Cloud v2.2.2: 既存の正規部品展開図URLを条件に応じて自動表示。外部純正カタログの無断取得や全メーカー純正図面の自動取得は行いません。完全無料・静的サイト対応。
