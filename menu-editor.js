@@ -2,7 +2,7 @@
 (function(){
 'use strict';
 const KEY='aozora_menu_layout_v172';
-const items=[['home','ホーム','⌂'],['vehicles','車両','🚗'],['parts','部品','⚙'],['catalog','部品検索','🌍'],['bodydocs','板金図面','📐'],['pro12','PRO12','🚀'],['jobs','見積','▤'],['details','明細','☷'],['orders','発注','▣'],['decision','修理支援','⚖'],['insights','分析','▥'],['settings','設定','⚙']];
+const items=[['home','ホーム','⌂'],['vehicles','車両','🚗'],['parts','部品','⚙'],['catalog','部品検索','🌍'],['bodydocs','板金図面','📐'],['rates','レバレート','¥'],['pro12','PRO12','🚀'],['jobs','見積','▤'],['details','明細','☷'],['orders','発注','▣'],['decision','修理支援','⚖'],['insights','分析','▥'],['settings','設定','⚙']];
 const defaults=items.map(x=>x[0]);
 let layout=load(), editing=false;
 function load(){try{const a=JSON.parse(localStorage.getItem(KEY));if(a&&Array.isArray(a.order)&&Array.isArray(a.hidden))return {order:[...new Set([...a.order.filter(id=>defaults.includes(id)),...defaults])],hidden:a.hidden.filter(id=>defaults.includes(id)&&id!=='home')};}catch(e){}return {order:[...defaults],hidden:[]};}

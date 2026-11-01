@@ -1,0 +1,16 @@
+/* AOZORA rate matrix: user-defined yen per hour, not insurance standards */
+'use strict';
+const RATE_KEY='aozora_rates_v20';
+const RATE_CLASSES=['国産車一般','国産車高級','外車A','外車B','外車C'];
+const RATE_CHANNELS=['保険','個人','業販'];
+const RATE_TYPES=['板金','塗装','整備'];
+let rateData;try{rateData=JSON.parse(localStorage.getItem(RATE_KEY)||'null')}catch(e){}
+if(!rateData||typeof rateData!=='object')rateData={};
+let rateClass=RATE_CLASSES[0],rateChannel=RATE_CHANNELS[0],rateType=RATE_TYPES[0],rateHours=1;
+function rateValue(c=rateClass,ch=rateChannel,t=rateType){return Number(rateData[c]?.[ch]?.[t]||0)}
+function rateSet(c,ch,t,v){const n=Number(v);if(!Number.isFinite(n)||n<0||n>1000000)return alert('0～1,000,000円の範囲で入力してください');rateData[c]??={};rateData[c][ch]??={};rateData[c][ch][t]=Math.round(n);try{localStorage.setItem(RATE_KEY,JSON.stringify(rateData))}catch(e){alert('レバレートを保存できませんでした')}render()}
+function rateChoose(k,v){if(k==='c')rateClass=v;if(k==='ch')rateChannel=v;if(k==='t')rateType=v;render()}
+function ratePage(){const r=rateValue(),amount=Math.round(r*rateHours);return `<section class="panel rate-panel"><h2>レバレート設定 <span class="premium-tag">RATE MATRIX</span></h2><p class="foot">5車格 × 3取引区分 × 3工程 = 45通りを個別設定。単位は円/時間・税抜。初期値は未設定（0円）です。各社・保険会社の公定単価ではありません。</p><div class="rate-matrix">${RATE_CLASSES.map(c=>`<div class="rate-group"><h3>${esc(c)}</h3>${RATE_CHANNELS.map(ch=>`<div class="rate-row"><strong>${ch}</strong>${RATE_TYPES.map(t=>`<label>${t}<input aria-label="${c} ${ch} ${t}のレバレート" type="number" min="0" max="1000000" step="100" value="${rateValue(c,ch,t)}" onchange="rateSet('${c}','${ch}','${t}',this.value)"></label>`).join('')}</div>`).join('')}</div>`).join('')}</div></section><section class="panel rate-panel"><h2>工賃クイック計算</h2><div class="grid"><label class="field">車格<select onchange="rateChoose('c',this.value)">${RATE_CLASSES.map(x=>`<option ${x===rateClass?'selected':''}>${x}</option>`).join('')}</select></label><label class="field">取引区分<select onchange="rateChoose('ch',this.value)">${RATE_CHANNELS.map(x=>`<option ${x===rateChannel?'selected':''}>${x}</option>`).join('')}</select></label><label class="field">工程<select onchange="rateChoose('t',this.value)">${RATE_TYPES.map(x=>`<option ${x===rateType?'selected':''}>${x}</option>`).join('')}</select></label><label class="field">作業時間（時間）<input type="number" min="0" max="1000" step="0.1" value="${rateHours}" onchange="rateHours=Math.max(0,Math.min(1000,Number(this.value)||0));render()"></label></div><div class="rate-total"><span>適用レバレート ${money(r)} / h</span><strong>${money(amount)}</strong><small>税抜・工賃のみ</small></div>${r===0?'<p class="foot">⚠ この区分の単価は未設定です。先に上の表で設定してください。</p>':''}<button class="full" ${!r||!rateHours?'disabled':''} onclick="rateToQuote()">この工賃を明細見積へ追加</button><p class="foot">選択した区分と時間を明細名に記録します。見積に追加後は単価を個別に変更できます。</p></section>`}
+function rateToQuote(){const r=rateValue();if(!r||!rateHours)return alert('レバレートと時間を設定してください');draftLines.push({id:uid(),kind:rateType==='整備'?'整備':rateType,name:`${rateClass}／${rateChannel}／${rateType}工賃（${rateHours}h × ${money(r)}/h）`,number:'',qty:1,price:Math.round(r*rateHours),unitCost:0,partId:''});go('details')}
+const ratePreviousRender=render;
+render=function(){if(tab==='rates'){document.getElementById('app').innerHTML=ratePage();return}ratePreviousRender()};
