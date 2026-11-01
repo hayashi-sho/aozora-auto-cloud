@@ -1,0 +1,60 @@
+// AOZORA Auto Cloud v1.1 — 15 practical operations modules; no external AI or API.
+'use strict';
+const OPS_KEY='aozora_auto_cloud_ops_v11';
+const OPS_DEFAULT={records:[],templates:[],relations:[],receivables:[],stockMoves:[]};
+let ops;try{ops={...OPS_DEFAULT,...JSON.parse(localStorage.getItem(OPS_KEY)||'{}')}}catch{ops=structuredClone(OPS_DEFAULT)}
+for(const k of Object.keys(OPS_DEFAULT))if(!Array.isArray(ops[k]))ops[k]=[];
+let opsView='workflow',opsJob='';
+const OPS_TYPES=[
+ ['workflow','案件一貫管理','見積→指示→納品→請求→入金'],
+ ['template','修理テンプレ','関連作業をまとめて展開'],
+ ['fitment','部品適合・代替','旧品番・代替・適合確認'],
+ ['procurement','発注・入荷','発注から検品・返品まで'],
+ ['inspection','入庫360°点検','既存傷・写真・走行距離'],
+ ['approval','追加見積・承認','金額変更と承認記録'],
+ ['checksheet','作業チェック','作業別安全確認'],
+ ['schedule','工程ボード','担当者・設備・日程'],
+ ['paint','塗装カルテ','塗料・色番号・乾燥条件'],
+ ['rework','再修理管理','手直し費用と原因'],
+ ['billing','請求漏れ照合','実績と請求の突合'],
+ ['stock','在庫引当・棚番','案件予約と在庫移動'],
+ ['loaner','代車管理','貸出期間と重複確認'],
+ ['quality','納車品質ゲート','必須項目完了で納車可'],
+ ['profit','実績利益','見積と実績の差分']
+];
+const opsEsc=esc;
+const opsToday=()=>new Date().toISOString().slice(0,10);
+const opsJobName=id=>state.jobs.find(j=>j.id===id)?.name||'案件未指定';
+const opsJobSelect=(selected='')=>`<option value="">案件未指定</option>`+state.jobs.map(j=>`<option value="${j.id}" ${j.id===selected?'selected':''}>${opsEsc(j.name)}</option>`).join('');
+const opsRecords=(type,job='')=>ops.records.filter(r=>r.type===type&&(!job||r.job===job));
+const opsField=(name,label,kind='text',value='',extra='')=>`<label class="field">${label}<input name="${name}" type="${kind}" value="${opsEsc(value)}" ${extra}></label>`;
+const opsSelect=(name,label,choices)=>`<label class="field">${label}<select name="${name}">${choices.map(c=>`<option>${opsEsc(c)}</option>`).join('')}</select></label>`;
+const opsForms={
+ workflow:()=>opsSelect('status','工程',['見積中','承認待ち','部品発注','部品待ち','作業指示済','作業中','検査中','納品済','請求済','入金済'])+opsField('amount','金額（税抜）','number',0,'min="0"')+opsField('reference','伝票番号')+opsField('due','期限','date'),
+ template:()=>opsField('title','テンプレート名','text','','required')+opsField('items','関連作業・部品（読点区切り）','text','脱着工賃,クリップ,塗装材料,エーミング要否確認'),
+ fitment:()=>opsField('number','部品番号','text','','required')+opsField('alternative','旧品番・代替品番')+opsField('vehicle','適合車種・型式')+opsSelect('verified','適合確認',['未確認','確認済み','不適合'])+opsField('source','確認元・根拠'),
+ procurement:()=>opsField('number','部品番号')+opsField('supplier','仕入先')+opsField('qty','数量','number',1,'min="1"')+opsField('cost','仕入単価','number',0,'min="0"')+opsSelect('status','状態',['発注予定','発注済み','納期回答待ち','入荷','検品済み','使用済み','返品'])+opsField('eta','入荷予定日','date'),
+ inspection:()=>opsSelect('position','撮影・点検位置',['前','後','右','左','室内','メーター','下回り','その他'])+opsField('mileage','走行距離 km','number',0,'min="0"')+opsField('damage','既存傷・状態')+opsField('photo','写真のファイル名・保管先（画像本体は保存しません）'),
+ approval:()=>opsField('reason','追加作業の理由','text','','required')+opsField('amount','追加金額','number',0)+opsSelect('status','承認状況',['未依頼','承認待ち','承認済み','却下'])+opsField('approver','承認者')+opsField('approvedAt','承認日時','datetime-local'),
+ checksheet:()=>opsSelect('work','作業区分',['ブレーキ','足回り','板金','塗装','脱着','整備','その他'])+opsField('check','確認項目（例：締付トルク確認）','text','','required')+opsSelect('result','結果',['未確認','OK','要再確認','不適合'])+opsField('worker','確認者'),
+ schedule:()=>opsSelect('stage','工程',['板金','塗装','整備','外注','検査','納車'])+opsField('worker','担当者')+opsField('resource','設備・ブース')+opsField('start','開始日','date')+opsField('end','終了日','date'),
+ paint:()=>opsField('color','カラーコード')+opsField('paintMaker','塗料メーカー')+opsField('formula','配合番号')+opsField('grams','使用量 g','number',0,'min="0"')+opsField('coats','塗装回数','number',2,'min="0"')+opsField('dry','乾燥条件・セッティング')+opsField('materialCost','塗料実原価','number',0,'min="0"'),
+ rework:()=>opsField('reason','再修理理由','text','','required')+opsField('worker','前回担当')+opsField('hours','再作業時間 h','number',0,'min="0" step="0.25"')+opsField('cost','追加材料・外注費','number',0,'min="0"')+opsField('prevention','再発防止策'),
+ billing:()=>opsField('item','実際の作業・使用部品','text','','required')+opsField('amount','請求候補金額','number',0,'min="0"')+opsSelect('billed','請求明細への計上',['未計上','計上済み','請求対象外'])+opsField('invoice','請求書番号'),
+ stock:()=>opsField('partNo','部品番号','text','','required')+opsField('shelf','棚番・保管場所')+opsField('qty','引当数量','number',1,'min="1"')+opsSelect('status','状態',['引当予約','出庫済み','引当解除','返却']),
+ loaner:()=>opsField('plate','代車登録番号','text','','required')+opsField('start','貸出開始','date')+opsField('end','返却予定','date')+opsField('mileage','貸出時走行距離','number',0,'min="0"')+opsField('fuel','燃料残量')+opsSelect('status','状態',['予約','貸出中','返却済み']),
+ quality:()=>opsField('check','納車前確認項目','text','','required')+opsSelect('result','結果',['未確認','OK','NG','対象外'])+opsField('worker','検査者'),
+ profit:()=>opsField('hours','実作業時間 h','number',0,'min="0" step="0.25"')+opsField('hourlyCost','直接人件費単価 / h','number',0,'min="0"')+opsField('material','実材料費','number',0,'min="0"')+opsField('outside','実外注費','number',0,'min="0"')+opsField('other','その他実原価','number',0,'min="0"')
+};
+function opsScreen(){const type=OPS_TYPES.find(x=>x[0]===opsView)||OPS_TYPES[0];const rec=opsRecords(opsView,opsJob);return `<section class="panel"><h2>実務統合モジュール v1.1</h2><p class="muted">AIなし・端末内保存。案件を指定するとその案件の記録を表示します。</p><label class="field">対象案件<select onchange="opsJob=this.value;render()">${opsJobSelect(opsJob)}</select></label><label class="field">機能<select onchange="opsView=this.value;render()">${OPS_TYPES.map(([id,name])=>`<option value="${id}" ${opsView===id?'selected':''}>${name}</option>`).join('')}</select></label></section><section class="panel"><h2>${type[1]}</h2><p class="muted">${type[2]}</p><form onsubmit="opsAdd(event)">${opsForms[opsView]()}${opsField('memo','メモ')}<button class="full">記録を追加</button></form></section>${opsSummary()}<section class="panel"><h2>登録履歴（${rec.length}）</h2>${rec.length?rec.slice().reverse().map(r=>`<div class="item"><div class="row between"><strong>${opsEsc(r.label)}</strong><small>${opsEsc(r.date)}</small></div><small>${opsEsc(Object.entries(r.data).filter(([k,v])=>v&&k!=='memo').map(([k,v])=>`${k}: ${v}`).join(' / '))}</small><div class="actions"><button class="tiny secondary" onclick="opsEdit('${r.id}')">編集</button><button class="tiny danger" onclick="opsDelete('${r.id}')">削除</button></div></div>`).join(''):'<div class="empty">この機能の登録はありません</div>'}</section><section class="panel"><button class="secondary full" onclick="opsExport()">実務記録CSVを出力</button><button class="secondary full" onclick="opsBackup()" style="margin-top:8px">全データ統合バックアップ</button><label class="field" style="margin-top:8px">統合バックアップ復元<input type="file" accept="application/json,.json" onchange="opsRestore(event)"></label></section>`}
+function opsSummary(){const j=state.jobs.find(x=>x.id===opsJob);let html='';if(opsView==='billing'){const a=opsRecords('billing',opsJob).filter(r=>r.data.billed==='未計上');html=`<div class="stat"><span>未計上候補 ${a.length}件</span><strong>${money(a.reduce((s,r)=>s+Number(r.data.amount||0),0))}</strong></div>`}if(opsView==='quality'){const a=opsRecords('quality',opsJob),bad=a.filter(r=>!['OK','対象外'].includes(r.data.result));html=`<div class="stat"><span>納車品質ゲート</span><strong>${a.length&&bad.length===0?'記録上OK':'未通過'}</strong></div><p class="muted">必要項目の網羅性は責任者が確認してください。登録ゼロ件は未通過です。</p>`}if(opsView==='profit'&&j){const a=opsRecords('profit',opsJob),actual=a.reduce((s,r)=>s+Number(r.data.hours||0)*Number(r.data.hourlyCost||0)+Number(r.data.material||0)+Number(r.data.outside||0)+Number(r.data.other||0),0);html=`<div class="grid"><div class="stat"><span>見積粗利</span><strong>${money(Number(j.sales||0)-Number(j.cost||0))}</strong></div><div class="stat"><span>実績粗利（記録分のみ）</span><strong>${money(Number(j.sales||0)-actual)}</strong></div></div><p class="muted">実績原価はこの画面に登録した記録分のみ。部品仕入等の未登録原価は含みません。</p>`}if(opsView==='loaner'){const a=opsRecords('loaner').filter(r=>r.data.status!=='返却済み');const overlaps=[];for(let i=0;i<a.length;i++)for(let k=i+1;k<a.length;k++)if(a[i].data.plate===a[k].data.plate&&a[i].data.start&&a[k].data.start&&a[i].data.start<=a[k].data.end&&a[k].data.start<=a[i].data.end)overlaps.push(a[i].data.plate);html=`<div class="stat"><span>貸出重複候補</span><strong>${[...new Set(overlaps)].map(opsEsc).join('、')||'なし'}</strong></div>`}if(opsView==='schedule'){const a=opsRecords('schedule'),over=[];for(let i=0;i<a.length;i++)for(let k=i+1;k<a.length;k++)if(a[i].data.resource&&a[i].data.resource===a[k].data.resource&&a[i].data.start&&a[k].data.start&&a[i].data.start<=a[k].data.end&&a[k].data.start<=a[i].data.end)over.push(a[i].data.resource);html=`<div class="stat"><span>設備日程重複候補</span><strong>${[...new Set(over)].map(opsEsc).join('、')||'なし'}</strong></div>`}if(opsView==='stock'){const counts={};for(const r of opsRecords('stock'))if(['引当予約','出庫済み'].includes(r.data.status))counts[r.data.partNo]=(counts[r.data.partNo]||0)+Number(r.data.qty||0);const issues=state.parts.filter(p=>counts[p.number]>Number(p.stock||0));html=`<div class="stat"><span>在庫超過引当候補</span><strong>${issues.map(p=>opsEsc(p.number)).join('、')||'なし'}</strong></div><p class="muted">出庫済み数量を含む簡易チェックです。在庫数量の自動減算は行いません。</p>`}return html?`<section class="panel"><h2>自動チェック</h2>${html}</section>`:''}
+function opsAdd(e){e.preventDefault();const data=Object.fromEntries(new FormData(e.target).entries());const label=data.title||data.number||data.partNo||data.item||data.check||data.reason||data.plate||data.status||data.stage||data.color||data.work||opsView;const r={id:uid(),type:opsView,job:opsJob,date:new Date().toLocaleString('ja-JP'),label,data};if(opsView==='loaner'&&data.start&&data.end&&data.start>data.end)return alert('返却予定日は貸出開始以降にしてください');if(opsView==='schedule'&&data.start&&data.end&&data.start>data.end)return alert('終了日は開始日以降にしてください');ops.records.push(r);opsSave()}
+function opsSave(){localStorage.setItem(OPS_KEY,JSON.stringify(ops));render()}
+function opsDelete(id){if(!confirm('この記録を削除しますか？'))return;ops.records=ops.records.filter(x=>x.id!==id);opsSave()}
+function opsEdit(id){const r=ops.records.find(x=>x.id===id);if(!r)return;opsView=r.type;opsJob=r.job;render();const f=document.querySelector('#app form');if(!f)return;for(const [k,val] of Object.entries(r.data))if(f.elements[k])f.elements[k].value=val;ops.records=ops.records.filter(x=>x.id!==id);localStorage.setItem(OPS_KEY,JSON.stringify(ops));f.scrollIntoView({behavior:'smooth'})}
+function opsExport(){const rows=[['種類','案件','日時','ラベル','内容'],...ops.records.map(r=>[OPS_TYPES.find(x=>x[0]===r.type)?.[1]||r.type,opsJobName(r.job),r.date,r.label,JSON.stringify(r.data)])];download('AOZORA_実務記録.csv','\uFEFF'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n'),'text/csv;charset=utf-8')}
+function opsBackup(){download('AOZORA_AutoCloud_統合backup_'+opsToday()+'.json',JSON.stringify({version:'1.1',core:state,operations:ops},null,2),'application/json')}
+function opsRestore(e){const f=e.target.files?.[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{const d=JSON.parse(reader.result);if(!d.core||!Array.isArray(d.core.vehicles)||!Array.isArray(d.core.parts)||!Array.isArray(d.core.jobs)||!Array.isArray(d.core.suppliers)||!d.operations||!Array.isArray(d.operations.records))throw Error('format');if(!confirm('既存データを統合バックアップで上書きします。続行しますか？'))return;state={...defaultState(),...d.core};ops={...structuredClone(OPS_DEFAULT),...d.operations};localStorage.setItem(KEY,JSON.stringify(state));opsSave()}catch{alert('正しいv1.1統合バックアップを選択してください')}};reader.readAsText(f)}
+const originalRender=render;
+render=function(){if(tab==='operations'){$('app').innerHTML=opsScreen();$('nav').innerHTML=`<button onclick="go('home')">⌂ ホーム</button><button class="active" onclick="go('operations')">☷ 実務</button><button onclick="go('jobs')">▤ 見積</button><button onclick="go('parts')">⚙ 部品</button><button onclick="go('settings')">⚙ 設定</button>`;return}originalRender();const nav=$('nav');if(nav&&!nav.querySelector('[data-ops]'))nav.insertAdjacentHTML('beforeend',`<button data-ops onclick="go('operations')"><span style="display:block;font-size:18px">☷</span>実務</button>`)};
+render();
