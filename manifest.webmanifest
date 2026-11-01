@@ -1,7 +1,7 @@
 {
   "name": "AOZORA. Auto Cloud",
   "short_name": "AOZORA Auto",
-  "description": "AOZORA. Auto Cloud v2.0 車両・部品・見積・レバレート・板金管理",
+  "description": "AOZORA. Auto Cloud v2.1 車両・部品・見積・レバレート・板金管理",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0a121e",

@@ -1,5 +1,5 @@
-# v2.0 PREMIUM
-- 実車風部位選択UI
-- 45区分レバレート設定と見積追加
-- AZアプリアイコン
-- v1.9 PRO12を継承
+# v2.2.1 CATALOG FIX
+- Fixed missing scanEsc helper that prevented the all-brand catalogue from opening.
+- Added visible entry button on parts screen, even if the catalogue menu is hidden.
+- Updated PWA cache version.
+- Preserved other v2.2 files.

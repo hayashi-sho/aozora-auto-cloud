@@ -1,17 +1,2 @@
-# AOZORA. Auto Cloud v2.0 PREMIUM
-
-GitHub Pagesへ全ファイルをアップロードしてください。旧データは同じlocalStorageキーで引き継ぎます。更新前に設定からJSONバックアップを保存してください。
-
-## 新機能
-- プレミアム・ダークUI、実車風のAI生成参考車両画像とクリックできる部位マーカー
-- 5車格（国産一般・国産高級・外車A/B/C）× 3取引（保険・個人・業販）× 3工程（板金・塗装・整備）の45種類のレバレート
-- 時間×単価の工賃計算、明細見積へ追加
-- 新しいAZデザインのSVGアプリアイコン
-- v1.9 PRO12および既存の機能を維持する構成
-
-## 注意
-- 車両写真はAI生成の汎用イメージであり、車種ごとの正確な部品形状や適合を示しません。
-- レバレートはユーザー設定値です。初期値0円で、保険会社の認定単価を自動取得しません。
-- レバレート設定は端末のブラウザに保存され、同期しません。
-- iPhoneホーム画面のアイコンが古いままの場合、ホーム画面から削除して再追加してください（データ消去はしないでください）。
-- 実機の操作確認は別途必要です。
+# AOZORA. Auto Cloud v2.2.1
+Upload all files to the GitHub Pages repository root. This release fixes the foreign-parts catalogue opening issue. It is a user-maintained parts register, not an automatic OEM catalogue. Back up local data before updating.

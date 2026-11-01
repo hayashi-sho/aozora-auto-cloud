@@ -1,5 +1,9 @@
 // v1.7 multi-brand parts workspace. User-entered data only; no unauthorized catalog scraping.
-'use strict';
+ 'use strict';
+// v2.2.1: OCR removal also removed the shared HTML escaping helper.
+// Keep the catalogue self-contained to prevent a ReferenceError on opening.
+function scanEsc(value){return String(value ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
 const catalogBrands=['メルセデス・ベンツ','BMW','MINI','アウディ','フォルクスワーゲン','ポルシェ','ボルボ','ジャガー','ランドローバー','レンジローバー','ベントレー','ロールス・ロイス','アストンマーティン','フェラーリ','ランボルギーニ','マセラティ','アルファロメオ','フィアット','アバルト','ランチア','ルノー','プジョー','シトロエン','DS','オペル','スマート','セアト','シュコダ','ダチア','サーブ','フォード','リンカーン','シボレー','キャデラック','ビュイック','GMC','クライスラー','ダッジ','ジープ','ラム','テスラ','リヴィアン','ルーシッド','ヒョンデ','キア','ジェネシス','BYD','MG','ポールスター','NIO','XPENG','ジーリー','紅旗','トヨタ','レクサス','日産','インフィニティ','ホンダ','アキュラ','マツダ','スバル','三菱','スズキ','ダイハツ','いすゞ','その他（自由入力）'];
 const catZones=['フロント外装','リア外装','ドア・サイド','ガラス・ミラー','ライト・電装','エンジン','冷却・空調','足回り','ブレーキ','駆動・ミッション','内装・安全装置','その他'];
 let catFilter='',catImageUrl='';
